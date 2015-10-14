@@ -3,6 +3,8 @@ from pylons import config
 import ckan.plugins.toolkit as toolkit
 ignore_missing = toolkit.get_validator('ignore_missing')
 
+import ckan.lib.i18n as i18n
+
 import ckan.plugins as p
 import ckan.lib.helpers as h
 
@@ -83,6 +85,11 @@ def get_recent_blog_posts(number=5, exclude=None):
 
     return new_list
 
+def get_locales():
+    locales = i18n.get_locales()
+
+    log.info(':::::::::::::::::  Retrieving Ckan locales list: %r', locales)
+    return locales
 
 class PagesPlugin(p.SingletonPlugin):
     p.implements(p.IConfigurer, inherit=True)
@@ -117,7 +124,8 @@ class PagesPlugin(p.SingletonPlugin):
             'build_nav_main': build_pages_nav_main,
             'render_content': render_content,
             'get_wysiwyg_editor': get_wysiwyg_editor,
-            'get_recent_blog_posts': get_recent_blog_posts
+            'get_recent_blog_posts': get_recent_blog_posts,
+            'get_locales': get_locales
         }
 
     def after_map(self, map):
