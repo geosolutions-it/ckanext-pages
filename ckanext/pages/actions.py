@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 
 import ckan.plugins as p
 import ckan.lib.navl.dictization_functions as df
@@ -11,18 +12,25 @@ from HTMLParser import HTMLParser
 from pylons.i18n.translation import get_lang
 
 import db
+
+_ = p.toolkit._
+
+log = logging.getLogger(__file__)
+
 def page_name_validator(key, data, errors, context):
-    '''session = context['session']
+    session = context['session']
     page = context.get('page')
     group_id = context.get('group_id')
-    if page and page == data[key]:
+
+    lang = get_lang()[0]
+    if page and page == data[key] and lang == data[('lang',)]:
         return
 
     query = session.query(db.Page.name).filter_by(name=data[key], group_id=group_id)
     result = query.first()
     if result:
         errors[key].append(
-            p.toolkit._('Page name already exists in database'))'''
+            p.toolkit._('Page name already exists in database for this language'))
 
 def not_empty_if_blog(key, data, errors, context):
     value = data.get(key)
@@ -62,7 +70,6 @@ schema = {
                      p.toolkit.get_validator('isodate')],
 }
 
-
 def _pages_show(context, data_dict):
     if db.pages_table is None:
         db.init_db(context['model'])
@@ -71,11 +78,14 @@ def _pages_show(context, data_dict):
 
     lang = get_lang()[0]
 
-    out = db.Page.get(group_id=org_id, name=page, lang=lang)
+    out = db.Page.get(group_id=org_id, name=page, lang=lang)    
     if out:
         out = db.table_dictize(out, context)
+    
+    if page and out is None:
+        p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language.'))
+    
     return out
-
 
 def _pages_list(context, data_dict):
     search = {}
@@ -138,11 +148,13 @@ def _pages_delete(context, data_dict):
     lang = get_lang()[0]
 
     out = db.Page.get(group_id=org_id, name=page, lang=lang)
+    if out is None:
+        out = db.Page.get(group_id=org_id, name=page)
+
     if out:
         session = context['session']
         session.delete(out)
         session.commit()
-
 
 def _pages_update(context, data_dict):
     if db.pages_table is None:

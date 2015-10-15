@@ -10,14 +10,12 @@
   {% set slug_prefix = cancel_url ~ '/' %}
   {% set slug_domain = h.url_for('organization_pages_index', id=id, qualified=true) %}
   {% set hide_field_order = true %}
-  {% set hide_field_lang = true %}
 {% elif type == 'group' %}
   {% set action_url = h.url_for('group_pages_edit', id=id, page='/' + page) %}
   {% set cancel_url = h.url_for('group_pages_index', id=id) %}
   {% set slug_prefix = cancel_url ~ '/' %}
   {% set slug_domain = h.url_for('group_pages_index', id=id, qualified=true) %}
   {% set hide_field_order = true %}
-  {% set hide_field_lang = true %}
 {% elif type == 'blog' %}
   {% set action_url = h.url_for('blog_edit', page='/' + page) %}
   {% set cancel_url = h.url_for('blog_index') %}
@@ -34,6 +32,7 @@
   {% if page %}
      {% set delete_url = h.url_for('pages_delete', page='/' + data.name) %}
   {% endif %}
+  {% set hide_field_order = true %}
 {% endif %}
 
 
@@ -61,8 +60,15 @@
   {{ form.input('title', id='field-title', label=_('Title'), placeholder=title_placeholder, value=data.title, error=errors.title, classes=['control-full', 'control-large'], attrs={'data-module': 'slug-preview-target'}) }}
 
   {% set domain = slug_domain|replace("http://", "")|replace("https://", "") %}
-  {% set attrs = {'data-module': 'slug-preview-slug', 'data-module-prefix': domain~'/', 'data-module-placeholder': '<page>'} %}
-  {{ form.prepend('name', id='field-name', label=_('URL'), prepend=slug_prefix, placeholder=_(url_placeholder), value=data.name, error=errors.name, attrs=attrs) }}
+
+  {% if data.localized %}
+    {% set attrs = {'readonly': 'true'} %}
+    {{ form.prepend('name', id='field-name', label=_('URL'), prepend=slug_prefix, placeholder=_(url_placeholder), value=data.name, error=errors.name, attrs=attrs) }}
+  {% else %}
+    {% set attrs = {'data-module': 'slug-preview-slug', 'data-module-prefix': domain~'/', 'data-module-placeholder': '<page>'} %}
+    {{ form.prepend('name', id='field-name', label=_('URL'), prepend=slug_prefix, placeholder=_(url_placeholder), value=data.name, error=errors.name, attrs=attrs) }}
+  {% endif %}
+  
 
   {{ form.input('publish_date', id='field-publish_date', label=_('Publish Date'), placeholder=_('2005-01-01'), value=data.publish_date, error=errors.publish_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'yyyy-mm-dd'}) }}
 
@@ -96,18 +102,18 @@
     </div>
   {% endif %}
 
-  {% if not hide_field_lang %}
-    <div class="control-group">
-      <label for="field-lang" class="control-label">{{ _('Language') }}</label>
-      <div class="controls">
-        <select id="field-lang" class="form-control" name="lang">
-          {% for locale in h.get_locales() %}
-            <option value="{{ locale }}" {% if locale == data.lang %}selected="selected"{% endif %}>{{ locale }}</option>
-          {% endfor %}
-        </select>
-      </div>
+  {{ form.input('lang', id='field-lang', label=_('Language'), placeholder=_('Language'), value=data.lang or h.get_current_locale(), error=errors.lang, classes=[], attrs={'readonly': 'true'}) }}
+
+  <!--div class="control-group" hidden="true">
+    <label for="field-lang" class="control-label">{{ _('Language') }}</label>
+    <div class="controls">
+      <select id="field-lang" class="form-control" name="lang">
+        {% for locale in h.get_locales() %}
+          <option value="{{ locale }}" {% if locale == data.lang %}selected="selected"{% endif %}>{{ locale }}</option>
+        {% endfor %}
+      </select>
     </div>
-  {% endif %}
+  </div-->
 
   {% set editor = h.get_wysiwyg_editor() %}
   {% if editor == 'medium' %}
