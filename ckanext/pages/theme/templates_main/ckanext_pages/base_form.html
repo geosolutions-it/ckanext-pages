@@ -61,13 +61,13 @@
 
   {% set domain = slug_domain|replace("http://", "")|replace("https://", "") %}
 
-  {% if data.localized %}
+  {# % if data.localized %}
     {% set attrs = {'readonly': 'true'} %}
     {{ form.prepend('name', id='field-name', label=_('URL'), prepend=slug_prefix, placeholder=_(url_placeholder), value=data.name, error=errors.name, attrs=attrs) }}
-  {% else %}
+  {% else % #}
     {% set attrs = {'data-module': 'slug-preview-slug', 'data-module-prefix': domain~'/', 'data-module-placeholder': '<page>'} %}
     {{ form.prepend('name', id='field-name', label=_('URL'), prepend=slug_prefix, placeholder=_(url_placeholder), value=data.name, error=errors.name, attrs=attrs) }}
-  {% endif %}
+  {# % endif % #}
   
 
   {{ form.input('publish_date', id='field-publish_date', label=_('Publish Date'), placeholder=_('2005-01-01'), value=data.publish_date, error=errors.publish_date, classes=[], attrs={'data-module': 'datepicker', 'data-date-format': 'yyyy-mm-dd'}) }}

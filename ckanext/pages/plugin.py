@@ -177,7 +177,7 @@ class PagesPlugin(p.SingletonPlugin):
                     action='pages_delete', ckan_icon='delete', controller=controller)
 
         #Added in order to manage new localized page creation
-        map.connect('/pages_edit_localized{page:/.*|}', controller=controller, action='pages_edit_localized')
+        #map.connect('/pages_edit_localized{page:/.*|}', controller=controller, action='pages_edit_localized')
 
         map.connect('pages_edit', '/pages_edit{page:/.*|}',
                     action='pages_edit', ckan_icon='edit', controller=controller)

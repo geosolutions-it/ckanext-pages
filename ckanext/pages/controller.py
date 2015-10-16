@@ -264,12 +264,14 @@ class PagesController(p.toolkit.BaseController):
             page = page[1:]
         if not page:
             return self._pages_list_pages(page_type)
+
         _page = p.toolkit.get_action('ckanext_pages_show')(
             data_dict={'org_id': None,
                        'page': page}
         )
+
         if _page is None:
-            p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language.'))
+            p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier: ') + page)
             #return self._pages_list_pages(p)
 
         p.toolkit.c.page = _page
@@ -321,7 +323,7 @@ class PagesController(p.toolkit.BaseController):
     def blog_edit(self, page=None, data=None, errors=None, error_summary=None):
         return self.pages_edit(page=page, data=data, errors=errors, error_summary=error_summary, page_type='blog')
 
-
+    '''
     def pages_edit_localized(self, page=None, data=None, errors=None, error_summary=None, page_type='pages'):
         if page:
             page = page[1:]
@@ -347,7 +349,7 @@ class PagesController(p.toolkit.BaseController):
 
         return p.toolkit.render('ckanext_pages/%s_edit.html' % page_type,
                                 extra_vars=vars)
-
+    '''
 
     def pages_edit(self, page=None, data=None, errors=None, error_summary=None, page_type='pages'):
         if page:
