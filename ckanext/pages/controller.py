@@ -2,7 +2,12 @@ import ckan.plugins as p
 import ckan.lib.helpers as helpers
 from pylons import config
 
+from pylons.i18n.translation import get_lang
+
 _ = p.toolkit._
+
+import logging
+log = logging.getLogger(__file__)
 
 class PagesController(p.toolkit.BaseController):
     controller = 'ckanext.pages.controller:PagesController'
@@ -253,20 +258,22 @@ class PagesController(p.toolkit.BaseController):
 
         _page['content'] = lxml.html.tostring(root)
 
-
-
     def pages_show(self, page=None, page_type='page'):
         p.toolkit.c.page_type = page_type
         if page:
             page = page[1:]
         if not page:
             return self._pages_list_pages(page_type)
+
         _page = p.toolkit.get_action('ckanext_pages_show')(
             data_dict={'org_id': None,
                        'page': page}
         )
+
         if _page is None:
-            return self._pages_list_pages(p)
+            p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier:') + page)
+            #return self._pages_list_pages(p)
+
         p.toolkit.c.page = _page
         self._inject_views_into_page(_page)
 
@@ -313,9 +320,36 @@ class PagesController(p.toolkit.BaseController):
             p.toolkit.abort(404, _('Group not found'))
         return p.toolkit.render('ckanext_pages/confirm_delete.html', {'page': page})
 
-
     def blog_edit(self, page=None, data=None, errors=None, error_summary=None):
         return self.pages_edit(page=page, data=data, errors=errors, error_summary=error_summary, page_type='blog')
+
+    '''
+    def pages_edit_localized(self, page=None, data=None, errors=None, error_summary=None, page_type='pages'):
+        if page:
+            page = page[1:]
+
+        try:
+            p.toolkit.check_access('ckanext_pages_update', {'user': p.toolkit.c.user or p.toolkit.c.author})
+        except p.toolkit.NotAuthorized:
+            p.toolkit.abort(401, _('Unauthorized to create or edit a page'))
+
+        # Ths allows to visualize the edit form with the same name for the page (feature needed for the localization purposes)
+        if not data:
+            lang = get_lang()[0]
+            data = {'title': page, 'name': page, 'lang': lang, 'localized': True}
+
+        errors = errors or {}
+        error_summary = error_summary or {}
+
+        form_snippet = config.get('ckanext.pages.form', 'ckanext_pages/base_form.html')
+
+        vars = {'data': data, 'errors': errors,
+                'error_summary': error_summary, 'page': page,
+                'form_snippet': form_snippet}
+
+        return p.toolkit.render('ckanext_pages/%s_edit.html' % page_type,
+                                extra_vars=vars)
+    '''
 
     def pages_edit(self, page=None, data=None, errors=None, error_summary=None, page_type='pages'):
         if page:
@@ -324,12 +358,12 @@ class PagesController(p.toolkit.BaseController):
             data_dict={'org_id': None,
                        'page': page,}
         )
+
         if _page is None:
             _page = {}
 
         if p.toolkit.request.method == 'POST' and not data:
             data = dict(p.toolkit.request.POST)
-
             _page.update(data)
 
             _page['org_id'] = None
@@ -345,8 +379,10 @@ class PagesController(p.toolkit.BaseController):
                 error_summary = e.error_summary
                 return self.pages_edit('/' + page, data,
                                        errors, error_summary, page_type=page_type)
-            p.toolkit.redirect_to(p.toolkit.url_for('%s_show' % page_type,
-                                                    page='/' + _page['name']))
+
+            #p.toolkit.redirect_to(p.toolkit.url_for('%s_show' % page_type,
+            #                                        page='/' + _page['name']))
+            p.toolkit.redirect_to('/pages')
 
         try:
             p.toolkit.check_access('ckanext_pages_update', {'user': p.toolkit.c.user or p.toolkit.c.author})

@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 
 import ckan.plugins as p
 import ckan.lib.navl.dictization_functions as df
@@ -8,19 +9,28 @@ import ckan.lib.uploader as uploader
 import ckan.lib.helpers as h
 from HTMLParser import HTMLParser
 
+from pylons.i18n.translation import get_lang
+
 import db
+
+_ = p.toolkit._
+
+log = logging.getLogger(__file__)
+
 def page_name_validator(key, data, errors, context):
     session = context['session']
     page = context.get('page')
     group_id = context.get('group_id')
-    if page and page == data[key]:
+
+    lang = get_lang()[0]
+    if page and page == data[key] and lang == data[('lang',)]:
         return
 
     query = session.query(db.Page.name).filter_by(name=data[key], group_id=group_id)
     result = query.first()
     if result:
         errors[key].append(
-            p.toolkit._('Page name already exists in database'))
+            p.toolkit._('Page name already exists in database for this language'))
 
 def not_empty_if_blog(key, data, errors, context):
     value = data.get(key)
@@ -44,7 +54,9 @@ schema = {
              p.toolkit.get_validator('name_validator'), page_name_validator],
     'content': [p.toolkit.get_validator('ignore_missing'), unicode],
     'page_type': [p.toolkit.get_validator('ignore_missing'), unicode],
-  #  'lang': [p.toolkit.get_validator('not_empty'), unicode],
+  
+    'lang': [p.toolkit.get_validator('not_empty'), unicode],
+
     'order': [p.toolkit.get_validator('ignore_missing'),
               unicode],
     'private': [p.toolkit.get_validator('ignore_missing'),
@@ -58,17 +70,22 @@ schema = {
                      p.toolkit.get_validator('isodate')],
 }
 
-
 def _pages_show(context, data_dict):
     if db.pages_table is None:
         db.init_db(context['model'])
     org_id = data_dict.get('org_id')
     page = data_dict.get('page')
-    out = db.Page.get(group_id=org_id, name=page)
+
+    lang = get_lang()[0]
+
+    out = db.Page.get(group_id=org_id, name=page, lang=lang)    
     if out:
         out = db.table_dictize(out, context)
+    
+    if page and out is None:
+        p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier:') + page)
+    
     return out
-
 
 def _pages_list(context, data_dict):
     search = {}
@@ -111,6 +128,7 @@ def _pages_list(context, data_dict):
                   'content': pg.content,
                   'name': pg.name,
                   'publish_date': pg.publish_date,
+                  'lang': pg.lang,
                   'group_id': pg.group_id,
                   'page_type': pg.page_type,
                  }
@@ -127,18 +145,26 @@ def _pages_delete(context, data_dict):
         db.init_db(context['model'])
     org_id = data_dict.get('org_id')
     page = data_dict.get('page')
-    out = db.Page.get(group_id=org_id, name=page)
+
+    lang = get_lang()[0]
+
+    out = db.Page.get(group_id=org_id, name=page, lang=lang)
+    if out is None:
+        out = db.Page.get(group_id=org_id, name=page)
+
     if out:
         session = context['session']
         session.delete(out)
         session.commit()
-
 
 def _pages_update(context, data_dict):
     if db.pages_table is None:
         db.init_db(context['model'])
     org_id = data_dict.get('org_id')
     page = data_dict.get('page')
+
+    lang = get_lang()[0]
+
     # we need the page in the context for name validation
     context['page'] = page
     context['group_id'] = org_id
@@ -148,12 +174,12 @@ def _pages_update(context, data_dict):
     if errors:
         raise p.toolkit.ValidationError(errors)
 
-    out = db.Page.get(group_id=org_id, name=page)
+    out = db.Page.get(group_id=org_id, name=page, lang=lang)
     if not out:
         out = db.Page()
         out.group_id = org_id
         out.name = page
-    items = ['title', 'content', 'name', 'private',
+    items = ['title', 'content', 'lang', 'name', 'private',
              'order', 'page_type', 'publish_date', 'content']
     for item in items:
         setattr(out, item, data.get(item))

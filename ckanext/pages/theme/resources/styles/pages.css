@@ -15,3 +15,7 @@
 .page-list-item h3 a {
   display: block;
 }
+
+.page_prev_list {
+	width: 600px;
+}

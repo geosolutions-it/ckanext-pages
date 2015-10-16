@@ -3,11 +3,17 @@ from pylons import config
 import ckan.plugins.toolkit as toolkit
 ignore_missing = toolkit.get_validator('ignore_missing')
 
+import ckan.lib.i18n as i18n
+
 import ckan.plugins as p
 import ckan.lib.helpers as h
 
 import actions
 import auth
+
+from pylons.i18n.translation import get_lang
+
+import db
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +89,26 @@ def get_recent_blog_posts(number=5, exclude=None):
 
     return new_list
 
+def get_locales():
+    locales = i18n.get_locales()
+
+    log.info(':::::::::::::::::  Retrieving Ckan locales list: %r', locales)
+    return locales
+
+def get_current_locale():
+    lang = get_lang()[0]
+
+    log.info('Retrieving Ckan current locale: %r', lang)
+    return lang
+
+def check_for_page_locale(page):
+    lang = get_lang()[0]
+
+    out = db.Page.get(group_id=None, name=page, lang=lang)
+    if out:
+        return True
+
+    return False
 
 class PagesPlugin(p.SingletonPlugin):
     p.implements(p.IConfigurer, inherit=True)
@@ -117,7 +143,10 @@ class PagesPlugin(p.SingletonPlugin):
             'build_nav_main': build_pages_nav_main,
             'render_content': render_content,
             'get_wysiwyg_editor': get_wysiwyg_editor,
-            'get_recent_blog_posts': get_recent_blog_posts
+            'get_recent_blog_posts': get_recent_blog_posts,
+            'get_locales': get_locales,
+            'check_for_page_locale': check_for_page_locale,
+            'get_current_locale': get_current_locale
         }
 
     def after_map(self, map):
@@ -146,6 +175,10 @@ class PagesPlugin(p.SingletonPlugin):
 
         map.connect('pages_delete', '/pages_delete{page:/.*|}',
                     action='pages_delete', ckan_icon='delete', controller=controller)
+
+        #Added in order to manage new localized page creation
+        #map.connect('/pages_edit_localized{page:/.*|}', controller=controller, action='pages_edit_localized')
+
         map.connect('pages_edit', '/pages_edit{page:/.*|}',
                     action='pages_edit', ckan_icon='edit', controller=controller)
         map.connect('pages_index', '/pages',

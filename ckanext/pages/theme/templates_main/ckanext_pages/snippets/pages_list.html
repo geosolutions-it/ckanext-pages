@@ -5,74 +5,106 @@
 {% if type == 'blog' %}
   <h2>{{ _('1 blog article') if pages_total == 1 else _('{0} blog articles').format(pages_total) }}</h2>
 {% else %}
-  <h2>{{ _('1 page') if pages_total == 1 else _('{0} pages').format(pages_total) }}</h2>
+  <h2>{{ _('1 page') if pages_total == 1 else _('{0} ages').format(pages_total) }}</h2>
 {% endif %}
 #}
 
 {% if type == 'blog' %}
-  <h2>Blog</h2>
+  <h2>{{ _('Blog') }}</h2>
 {% else %}
-  <h2>Pages</h2>
+  <h2>{{ _('Pages') }}</h2>
 {% endif %}
 
 {% if pages %}
   {% set editor = h.get_wysiwyg_editor() %}
   
     {% for page in pages %}
-      {% if id %} {# this is for orgs and groups #}
-        {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action=action, id=id, page='/' + page.name) %}
-      {% elif type == 'blog' %}
-        {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action='blog_show', page='/' + page.name) %}
-      {% else %}
-        {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action='pages_show', page='/' + page.name) %}
-      {% endif %}
-      <div class="row page-list-item dataset-item">
-      {% if page.image %}
-        <div class="span3 image">
-          <a style="background-image:url({{ page.image }})" href="{{ url }}">
-          </a>
-        </div>
-        <div class="span9">
-           <h3 class="dataset-heading">
-              <a href="{{ url }}" >{{ page.title }}</a>
-              {% if page.publish_date %}
-                 <small class="date"> {{ h.render_datetime(page.publish_date) }} </small>
-              {% endif %}
-            </h3>
-            {% if page.content %}
-              {% if editor %}
-              <div>
-                {{page.content|striptags|truncate}}
-              </div>
+      {% if page.lang == h.get_current_locale() %}
+        {% if id %} {# this is for orgs and groups #}
+          {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action=action, id=id, page='/' + page.name) %}
+        {% elif type == 'blog' %}
+          {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action='blog_show', page='/' + page.name) %}
+        {% else %}
+          {% set url = h.url_for(controller='ckanext.pages.controller:PagesController', action='pages_show', page='/' + page.name) %}
+        {% endif %}
+        <div class="row page-list-item dataset-item">
+        {% if page.image %}
+          <div class="span3 image">
+            <a style="background-image:url({{ page.image }})" href="{{ url }}">
+            </a>
+          </div>
+          <div class="span9">
+             <h3 class="dataset-heading">
+                <a href="{{ url }}" >{{ page.title }}</a>
+                {% if page.publish_date %}
+                   <small class="date"> {{ h.render_datetime(page.publish_date) }} </small>
+                {% endif %}
+              </h3>
+              {% if page.content %}
+                {% if editor %}
+                <div>
+                  {{page.content|striptags|truncate}}
+                </div>
+                {% else %}
+                  {{ h.markdown_extract(page.content) }}
+                {% endif %}
               {% else %}
-                {{ h.markdown_extract(page.content) }}
+                <p class="empty">{{ _('This page currently has no content') }}</p>
               {% endif %}
-            {% else %}
-              <p class="empty">{{ _('This page currently has no content') }}</p>
-            {% endif %}
-        </div>
-      {% else %}
-        <div class="span12">
-          <h3 class="dataset-heading">
-            <a href="{{ url }}" >{{ page.title }}</a>
-            {% if page.publish_date %}
-               <small class="date"> {{ h.render_datetime(page.publish_date) }} </small>
-            {% endif %}
-          </h3>
-          {% if page.content %}
-            {% if editor %}
-            <div>
-              {{page.content|striptags|truncate}}
+          </div>
+        {% else %}
+            <div class="span12">
+              <h3 class="dataset-heading">
+                {# % if h.check_for_page_locale(page.name) % #}
+                  <a href="{{ url }}" >{{ page.title }}</a>
+                {# % else %}
+                  {% set new_page_locale = h.dump_json({'content': _('This page is not localized for the current language. Do you want to create a new page for the current language now? If not, please change language from the language selector in order to procede with the page editing')}) %}
+                  {% set new_page_url = h.url_for(controller='ckanext.pages.controller:PagesController', action='pages_edit_localized', page='') %}
+
+                  <!--a href="{{ new_page_url }}" data-module="confirm-action" data-module-i18n="{{ new_page_locale }}">{{ page.title }}</a-->
+
+                  <a data-toggle="modal" href="#" data-target="#myModal">{{ page.title }}</a>
+
+                  <!-- Modal -->
+                  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                          <h4 class="modal-title" id="myModalLabel">{{ _('Please Confirm Action') }}</h4>
+                        </div>
+                        <div class="modal-body">
+                           {{ _('This page is not localized for the current language. Do you want to create a new page for the current language now? If not, please change language from the language selector in order to procede with the page editing') }}
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">{{ _('Cancel') }}</button>
+                          <button type="button" class="btn btn-primary" onclick="location.href = '{{ new_page_url }}/{{ page.name }}'">{{ _('Confirm') }}</button>
+                        </div>
+                      </div><!-- /.modal-content -->
+                    </div><!-- /.modal-dialog -->
+                  </div><!-- /.modal -->
+                {% endif % #}
+                
+                {% if page.publish_date %}
+                   <small class="date"> {{ h.render_datetime(page.publish_date) }} </small>
+                {% endif %}
+
+              </h3>
+              {% if page.content %}
+                {% if editor %}
+                <div class="page_prev_list">
+                  {{page.content|striptags|truncate}}
+                </div>
+                {% else %}
+                  {{ h.markdown_extract(page.content) }}
+                {% endif %}
+              {% else %}
+                <p class="empty">{{ _('This page currently has no content') }}</p>
+              {% endif %}
             </div>
-            {% else %}
-              {{ h.markdown_extract(page.content) }}
-            {% endif %}
-          {% else %}
-            <p class="empty">{{ _('This page currently has no content') }}</p>
-          {% endif %}
+        {% endif %}
         </div>
       {% endif %}
-      </div>
     {% endfor %}
   
 {% else %}
