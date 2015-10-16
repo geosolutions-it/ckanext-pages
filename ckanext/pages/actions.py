@@ -77,13 +77,13 @@ def _pages_show(context, data_dict):
     page = data_dict.get('page')
 
     lang = get_lang()[0]
-    
+
     out = db.Page.get(group_id=org_id, name=page, lang=lang)    
     if out:
         out = db.table_dictize(out, context)
     
     if page and out is None:
-        p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier: ') + page)
+        p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier:') + page)
     
     return out
 

@@ -271,7 +271,7 @@ class PagesController(p.toolkit.BaseController):
         )
 
         if _page is None:
-            p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier: ') + page)
+            p.toolkit.abort(404, _('This page is not localized for the current language. You have to create a new page for this language using the same identifier:') + page)
             #return self._pages_list_pages(p)
 
         p.toolkit.c.page = _page

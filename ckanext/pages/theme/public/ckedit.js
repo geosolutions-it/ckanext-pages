@@ -39,6 +39,7 @@ this.ckan.module('ckedit', function (jQuery, _) {
       config.extraPlugins = 'divarea,ckanview';
       config.height = '400px';
       config.customConfig = false;
+      config.language = ckan.i18n.options.locale_data.ckan[""].lang || preview_config.forceLocaleTo || "en";
 
       var editor = $(this.el).ckeditor(config);
     },
