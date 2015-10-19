@@ -26,7 +26,7 @@ def page_name_validator(key, data, errors, context):
     if page and page == data[key] and lang == data[('lang',)]:
         return
 
-    query = session.query(db.Page.name).filter_by(name=data[key], group_id=group_id)
+    query = session.query(db.Page.name).filter_by(name=data[key], group_id=group_id, lang=lang)
     result = query.first()
     if result:
         errors[key].append(
